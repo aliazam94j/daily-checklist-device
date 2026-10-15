@@ -1,0 +1,5 @@
+build
+!.vscode/*
+wifi_config.h
+build-wsl
+*.db
