@@ -37,7 +37,7 @@ before the next one gets added.
 
 | Version | What it adds | Status |
 |---|---|---|
-| **v1** | Pico 2 W + one button, native Pico C SDK. Connects to WiFi, sends a direct HTTP POST to Flask on button press. No Pi, no MQTT yet — just proving button → WiFi → API → database works end to end. | 🔧 In progress |
+| **v1** | Pico 2 W + one button, native Pico C SDK. Connects to WiFi, sends a direct HTTP POST to Flask on button press. No Pi, no MQTT yet — just proving button → WiFi → API → database works end to end. | ✅ Done |
 | **v2** | Pi Zero 2 W joins as an MQTT broker + bridge. Tasks get pulled from Postgres each morning and pushed to the Pico over MQTT instead of being hardcoded. The ESP32-H2 joins as a second input device over Bluetooth, relayed through the same Pi. | ⏳ Planned |
 | **v3** | Polish — a touchscreen (swapping in a "Cheap Yellow Display," an ESP32 with a built-in 2.8" screen), a real enclosure, streak/carry-over logic. | ⏳ Planned |
 | **v4** | Optional deepening pass: rewrite the Pi's bridge in C, cross-compiled for ARM, as a proper systemd service — and, as a stretch goal, a custom Buildroot Linux image instead of stock Raspberry Pi OS. | ⏳ Stretch goal |
@@ -57,8 +57,8 @@ before the next one gets added.
 |---|---|
 | **VS Code + the official Raspberry Pi Pico extension** (not PlatformIO) | PlatformIO's `raspberrypi` platform only supports the original RP2040 Pico through the Arduino framework — no Pico 2 W (RP2350) board definition, no native-SDK option. The official extension wraps the real `pico-sdk` + CMake + Ninja with proper RP2350 support. |
 | **Native Pico C SDK**, not the Arduino framework | Chosen deliberately for lower-level C practice over convenience — this project is as much about strengthening C fundamentals as it is about the finished device. |
-| **Flask + Postgres** (v1+, backend) | Reuses patterns from an earlier finished project, [IoT Telemetry & Analytics Platform](https://github.com/aliazam94j/iot-telemetry-platform), rather than a framework picked just for this one. |
-| **SQLite** (temporary stand-in, v1 only) | Used to prove the Flask-writes-to-a-database logic on its own, without also debugging a Postgres install/connection at the same time — the same staged, one-new-thing-at-a-time principle applied one layer down. Swapping to Postgres (the architecture's actual source of truth) is still a planned step before v1 is considered done. |
+| **Flask + Postgres** (v1+, backend) | Reuses patterns from an earlier finished project, [IoT Telemetry & Analytics Platform](https://github.com/aliazam94j/iot-telemetry-platform), rather than a framework picked just for this one. Live from v1 — `daily.py` connects via `psycopg2`. |
+| **SQLite** (used temporarily, early v1) | Proved the Flask-writes-to-a-database logic on its own, before also debugging a Postgres install/connection at the same time — the same staged, one-new-thing-at-a-time principle applied one layer down. Swapped out for Postgres once that logic was confirmed working. |
 
 ## A note on scope
 
@@ -70,11 +70,12 @@ the fastest possible checklist app.
 
 ## Status
 
-**v1 — in progress.** WiFi connect is working on the Pico 2 W (native SDK,
-`cyw43_arch`); a debounced button read and an LED toggle are both verified on
-real hardware. The Flask API (`daily_checklist_backend/daily.py`) is up and
-writing button presses to a SQLite database (see Tooling) — a deliberate,
-temporary stand-in for Postgres to prove the write-path logic first. Still
-missing before v1 is done: the Pico itself sending the real HTTP POST over
-WiFi on button press (right now a press only toggles the LED locally), and
-swapping the backend from SQLite over to Postgres.
+**v1 — done.** The full loop is confirmed working end to end on real
+hardware: the Pico 2 W connects to WiFi (native SDK, `cyw43_arch`), detects a
+debounced button press, opens a raw lwIP TCP connection, and sends a real
+HTTP POST (`POST /DAILY`) to the Flask API. Flask writes the press to
+Postgres (via `psycopg2`), and the timestamp is readable back from the `/`
+status route. No Pi, no MQTT yet — that's v2.
+
+Next up: **v2** — Pi Zero 2 W joins as an MQTT broker + bridge, and the
+ESP32-H2 joins as a second input device over Bluetooth.
